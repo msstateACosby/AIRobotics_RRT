@@ -37,59 +37,87 @@ def find_neighbors(points, new_node, radius):
         
     return node_neighbors
 
-def collides(a, b, map):
-    slope = (b[1]-a[1])/(b[0]-a[0])
-    x_values = np.array(list(range(a[0],b[0]+1)))
-    y_values = slope * (x_values - a[0]) + a[1]
-    floor_values = np.floor(y_values)
-    ceiling_values = np.ceiling(y_values)
-    for x in x_values:
-        for i in range(len(y_values)):
-            if map[x, floor_values[i]] != 0:
+def collides(a, b, discretized_map):
+    #print(a.position, b.position)
+    try:
+        slope = (b.position[0]-a.position[0])/(b.position[1]-a.position[1])
+        if a.position[1] < b.position[1]:
+            x_values = np.array(list(range(a.position[1],b.position[1]+1)))
+            y_values = slope * (x_values - a.position[1]) + a.position[0]
+        else:
+            x_values = np.array(list(range(b.position[1],a.position[1]+1)))
+            y_values = slope * (x_values - b.position[1]) + b.position[0]
+        floor_values = np.floor(y_values)
+        ceiling_values = np.ceil(y_values)
+        for i in range(len(x_values)):
+            #print(i)
+            #print(x_values[i], floor_values[i])
+            #print(discretized_map[int(floor_values[i]), int(x_values[i])])
+            if discretized_map[int(floor_values[i]), int(x_values[i])] == 0:
+                #print("Failure by floor values")
                 return True
-            elif map[x, ceiling_values[i]] != 0:
+            if discretized_map[int(ceiling_values[i]), int(x_values[i])] == 0:
+                #print("Failure by ceiling values")
                 return True
-    return False
-                
+        #print("No collision!")
+        return False
+    except ZeroDivisionError:
+        y_values = range(min(a.position[0], b.position[0]), max(a.position[0], b.position[0]))
+        x_values = [a.position[1] for _ in range(len(y_values))]
+        for i in range(len(x_values)):
+            if discretized_map[int(y_values[i]), int(x_values[i])] == 0:
+                #print("failure by divbyzero values")
+                return True
+        #print("No collision!")
+        return False
 
 
 def euc_dist(a, b):
+    a = np.array(a)
+    b = np.array(b)
     return np.linalg.norm(a - b)
 
-def RRT(iterations, map, start, goal):
+def RRT(iterations, discretized_map, start, goal):
     root = Node(None, [], 0, start) 
 
-    map_size = map.shape()
+    map_size = discretized_map.shape
     # See how the other sub-team handles this to make this generalizable
 
     for i in range(iterations):
+        #print(i + 1)
         points = []
         tree_traversal(root, points)
-        randomPosition = np.array([np.random.randint(map_size[0]), np.random.randint(map_size[1])])
+        randomPosition = (np.random.randint(map_size[0]), np.random.randint(map_size[1]))
         new_node = Node(None, [], np.inf, randomPosition)
-        if map[randomPosition] != 0:
+        if discretized_map[randomPosition] == 0:
+            #print("In an Obstacle")
             continue
         nearest_node = nearest(new_node, points)
         new_node.cost = euc_dist(new_node.position, nearest_node.position)
         # Get a good value for radius, maybe dynamically calculated? Right now it's 16 arbitrarily.
-        node_neighbors = find_neighbors(root, new_node, 16)
+        node_neighbors = find_neighbors(points, new_node, 100)
         node_best = None
         for node in node_neighbors:
-            if not collides(node, new_node, map):
+            if not collides(node, new_node, discretized_map):
+                #print("Node Best Found")
                 node_best = node
                 break
-        if node_best == None: continue
+        if node_best == None:
+            #print("Failure by no neighbors")
+            continue
         new_node.parent = node_best
         node_best.children.append(new_node)
         new_node.cost = euc_dist(new_node.position, node_best.position) + node_best.cost
+        #print(node_best, new_node, node_best.cost, new_node.cost, node_best.position, new_node.position)
         # Rewire the graph as appropriate for the neighbors of this new node
-        for neighbor in node_neighbors:
-            if not collides(neighbor, new_node, map): continue
-            if new_node.cost + euc_dist(new_node.position, neighbor.position) < neighbor.cost:
-                neighbor.cost = new_node.cost + euc_dist(new_node.position, neighbor.position)
-                neighbor.parent.children.remove(neighbor)
-                neighbor.parent = new_node
-                new_node.children.append(neighbor)
+        #  for neighbor in node_neighbors:
+        #      if collides(neighbor, new_node, discretized_map):
+        #          continue
+        #      if new_node.cost + euc_dist(new_node.position, neighbor.position) < neighbor.cost:
+        #          neighbor.cost = new_node.cost + euc_dist(new_node.position, neighbor.position)
+        #          neighbor.parent.children.remove(neighbor)
+        #          neighbor.parent = new_node
+        #          new_node.children.append(neighbor)
                 # Pseudocode says G += {new_node, neighbor}. What does this mean in our context? Is it necessary?
         # Similarly it says G += Link here. It's assuming the graph is defined in terms of edges and vertices
     
@@ -108,6 +136,8 @@ def RRT(iterations, map, start, goal):
     while(current_node.parent is not None):
         path.insert(0,current_node.position)
         current_node = current_node.parent
+
+    path.insert(0, start)
 
     return path
                 
