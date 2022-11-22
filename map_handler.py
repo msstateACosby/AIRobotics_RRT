@@ -62,7 +62,7 @@ def main():
             ("map_2.png", (1920, 1080), 100, iterations),
             ("map_3.png", (1920, 1080), 100, iterations),
             ("map_4.png", (1920, 1080), 100, iterations),
-            ("map_5.png", (512, 512), 100, iterations),
+            ("map_5.png", (512, 512), 50, iterations),
             ]
     #
     ####
@@ -83,8 +83,8 @@ def main():
     red = (0, 0, 255)
     green = (0, 255, 0)
     blue = (255, 0, 0)
-    line_thickness = 1
-    point_thickness = 3
+    line_thickness = 2
+    point_thickness = 4
     wait_time = 1000
 
     image = cv.circle(image, start, point_thickness, green, -1)
