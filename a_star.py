@@ -16,33 +16,40 @@ def get_neighbors(g, grid):
         (g[0] - 1, g[1] + 1),
         (g[0]    , g[1] - 1),
     ]
+    #print(possible_neighbors)
     for neighbor in possible_neighbors:
-        if (grid[neighbor[0], neighbor[1]] != 0 and 
-            neighbor[0] >= 0 and neighbor[0] < grid.shape[0] and
-            neighbor[1] >= 0 and neighbor[1] < grid.shape[1]):
+        if (grid[neighbor[1], neighbor[0]] != 0 ):
             neighbors.append(neighbor)
     return neighbors  
 
 #actually runs the a_star
 def a_star(grid, start, end):
     fringe = queue.PriorityQueue()
-    closed = []
+    closed = set()
     start_node = Node(None, None, 0, start)
-    fringe.put((0, start))
+    fringe.put((0, start_node))
     while not fringe.empty():
+        
         current = fringe.get()[1]
+        #print(current.position)
         if current.position not in closed:
             if current.position == end:
                 return current
-            closed.append(current.position)
+            closed.add(current.position)
             neighbors = get_neighbors(current.position, grid)
             for neighbor in neighbors:
                 cost_to = euc_dist(neighbor, current.position)
+                #print(cost_to)
                 cum_cost = cost_to + current.cost
+                
                 heuristic = euc_dist(neighbor, end)
                 priority = cum_cost + heuristic
-                new_node = Node(current, None, priority, neighbor)
+                #print(cum_cost, heuristic)
+                new_node = Node(current, None, cum_cost, neighbor)
+                #print(priority)
                 fringe.put((priority, new_node))
+        #else:
+            #print('encounterd before')
 
 # adds in the traceback
 #calling this returns a list of points describing the path
