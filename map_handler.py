@@ -73,7 +73,7 @@ def main():
     red = (0, 0, 255)
     green = (0, 255, 0)
     blue = (255, 0, 0)
-    line_thickness = 3
+    line_thickness = 1
     point_thickness = 7
     wait_time = 1000
 
