@@ -138,5 +138,5 @@ def RRT(threshold, iterations, discretized_map, start, goal):
     path.insert(0, start)
 
     print(f"{iteration} Iterations")
-    return path
+    return path, root
                 

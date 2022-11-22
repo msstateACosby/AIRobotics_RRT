@@ -20,6 +20,13 @@ def discretize_image(img, discrete_res):
     print(discrete_map.shape)
     return discrete_map
 
+def tree_traversal_drawing(root, image):
+    blue = (255, 0, 0)
+    if root.children:
+        for node in root.children:
+            cv.line(image, root.position, node.position, blue, 1)
+            tree_traversal_drawing(node, image)
+
 
 def select_start_and_goal(discrete_map):
     x, y = discrete_map.shape
@@ -69,7 +76,7 @@ def main():
 
 
     start, end = select_start_and_goal(discrete_map)
-    points = RRT(selected_map[2], selected_map[3], discrete_map, start, end)
+    points, root = RRT(selected_map[2], selected_map[3], discrete_map, start, end)
     start = (start[1], start[0])
     end = (end[1], end[0])
     print(f"{start=}, {end=}")
@@ -84,6 +91,7 @@ def main():
     image = cv.circle(image, end, point_thickness, blue, -1)
     cv.imshow("Map", image)
     cv.waitKey(wait_time)
+    tree_traversal_drawing(root, image)
     for p, _ in enumerate(points):
         if p + 1 >= len(points):
             break
