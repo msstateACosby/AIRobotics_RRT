@@ -80,7 +80,7 @@ def RRT(threshold, iterations, discretized_map, start, goal):
 
     map_size = discretized_map.shape
     # See how the other sub-team handles this to make this generalizable
-
+    old_dist_to_goal = np.inf
     for iteration in range(1, iterations + 1):
         points = []
         tree_traversal(root, points)
@@ -112,12 +112,14 @@ def RRT(threshold, iterations, discretized_map, start, goal):
                 neighbor.parent.children.remove(neighbor)
                 neighbor.parent = new_node
                 new_node.children.append(neighbor)
-                # Pseudocode says G += {new_node, neighbor}. What does this mean in our context? Is it necessary?
+                #Pseudocode says G += {new_node, neighbor}. What does this mean in our context? Is it necessary?
         # Similarly it says G += Link here. It's assuming the graph is defined in terms of edges and vertices
-        if euc_dist(new_node.position, goal_node.position) <= threshold and not collides(new_node, goal_node, discretized_map):
+        dist_to_goal =euc_dist(new_node.position, goal_node.position)
+        
+        if  dist_to_goal <= threshold and dist_to_goal < old_dist_to_goal and not collides(new_node, goal_node, discretized_map):
             stored_node = new_node
             print(new_node.position, goal_node.position, collides(new_node, goal_node, discretized_map))
-            break
+            old_dist_to_goal = dist_to_goal
     
     points = []
     tree_traversal(root, points)
@@ -138,5 +140,5 @@ def RRT(threshold, iterations, discretized_map, start, goal):
     path.insert(0, start)
 
     print(f"{iteration} Iterations")
-    return path
+    return path, root
                 
