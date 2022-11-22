@@ -33,7 +33,7 @@ def find_neighbors(points, new_node, radius):
         if distance <= radius:
             node_neighbors.append(node)
 
-    node_neighbors.sort(reverse=True,key=lambda x : x.cost)
+    node_neighbors.sort(key=lambda x : x.cost)
         
     return node_neighbors
 
@@ -49,23 +49,25 @@ def collides(a, b, discretized_map):
             y_values = slope * (x_values - b.position[1]) + b.position[0]
         floor_values = np.floor(y_values)
         ceiling_values = np.ceil(y_values)
+        #print(slope)
         for i in range(len(x_values)):
-            #print(i)
-            #print(x_values[i], floor_values[i])
-            #print(discretized_map[int(floor_values[i]), int(x_values[i])])
-            if discretized_map[int(floor_values[i]), int(x_values[i])] == 0:
-                #print("Failure by floor values")
-                return True
-            if discretized_map[int(ceiling_values[i]), int(x_values[i])] == 0:
-                #print("Failure by ceiling values")
-                return True
+            
+            y_start = y_values[i]
+            y_end = y_start + slope
+            for j in range(int(min(y_start,y_end)), int(max(y_start,y_end))+ 1):
+                if discretized_map[int(x_values[i]), int(np.floor(j))] == 0:
+                    #print("Failure by floor values")
+                    return True
+                if discretized_map[int(x_values[i]), int(np.ceil(j))] == 0:
+                    #print("Failure by ceiling values")
+                    return True
         #print("No collision!")
         return False
     except ZeroDivisionError:
         y_values = range(min(a.position[0], b.position[0]), max(a.position[0], b.position[0]))
         x_values = [a.position[1] for _ in range(len(y_values))]
         for i in range(len(x_values)):
-            if discretized_map[int(y_values[i]), int(x_values[i])] == 0:
+            if discretized_map[int(x_values[i]), int(y_values[i])] == 0:
                 #print("failure by divbyzero values")
                 return True
         #print("No collision!")
