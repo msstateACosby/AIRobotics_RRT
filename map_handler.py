@@ -23,6 +23,7 @@ def discretize_image(img, discrete_res):
 
 def select_start_and_goal(discrete_map):
     x, y = discrete_map.shape
+    print(f"{x=}, {y=}")
     x -= 1
     y -= 1
 
@@ -46,49 +47,49 @@ def select_start_and_goal(discrete_map):
 
 def main():
     ####
-    # Enumeration of maps and their sizes
+    # Enumeration of map files, sizes, distance thresholds, and iteration counts
+    iterations = 2000
     maps = [
-            ("house.png", (500, 500)),
-            ("map_1.png", (1920, 1080)),
-            ("map_2.png", (1920, 1080)),
-            ("map_3.png", (1920, 1080)),
-            ("map_4.png", (1920, 1080)),
+            ("house.png", (500, 500), 20, iterations),
+            ("map_1.png", (1920, 1080), 100, iterations),
+            ("map_2.png", (1920, 1080), 100, iterations),
+            ("map_3.png", (1920, 1080), 100, iterations),
+            ("map_4.png", (1920, 1080), 100, iterations),
+            ("map_5.png", (512, 512), 100, iterations),
             ]
     #
     ####
 
-    selected_map = maps[0]
+    selected_map = maps[5]
 
-    image = cv.cvtColor(cv.imread(selected_map[0]), cv.COLOR_BGR2GRAY)
-
-    size = (selected_map[1][1], selected_map[1][0])
-
+    image = cv.imread(selected_map[0])
+    #size = (selected_map[1][1], selected_map[1][0])
     #discrete_map = discretize_image(image, size)
-    discrete_map = image
+    discrete_map = cv.cvtColor(image, cv.COLOR_BGR2GRAY)
+
 
     start, end = select_start_and_goal(discrete_map)
-    points = RRT(250, discrete_map, start, end)
-    image = discrete_map
-    print(image.shape)
+    points = RRT(selected_map[2], selected_map[3], discrete_map, start, end)
+    start = (start[1], start[0])
+    end = (end[1], end[0])
+    print(f"{start=}, {end=}")
     red = (0, 0, 255)
     green = (0, 255, 0)
     blue = (255, 0, 0)
     line_thickness = 1
-    point_thickness = 7
+    point_thickness = 3
     wait_time = 1000
 
-    # Open in color to display red line
-    #image = cv.imread(selected_map[0])
-
     image = cv.circle(image, start, point_thickness, green, -1)
-    image = cv.circle(image, end, point_thickness, green, -1)
+    image = cv.circle(image, end, point_thickness, blue, -1)
     cv.imshow("Map", image)
     cv.waitKey(wait_time)
     for p, _ in enumerate(points):
         if p + 1 >= len(points):
             break
         
-        pair = (points[p], points[p+1])
+        #pair = ((points[p][1], points[p][0]), (points[p+1][1], points[p+1][0]))
+        pair = (points[p], points[p + 1])
 
         image = cv.line(image, pair[0], pair[1], red, line_thickness)
         cv.imshow("Map", image)

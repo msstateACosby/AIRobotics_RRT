@@ -38,7 +38,6 @@ def find_neighbors(points, new_node, radius):
     return node_neighbors
 
 def collides(a, b, discretized_map):
-    #print(a.position, b.position)
     try:
         slope = (b.position[0]-a.position[0])/(b.position[1]-a.position[1])
         if a.position[1] < b.position[1]:
@@ -49,28 +48,22 @@ def collides(a, b, discretized_map):
             y_values = slope * (x_values - b.position[1]) + b.position[0]
         floor_values = np.floor(y_values)
         ceiling_values = np.ceil(y_values)
-        #print(slope)
         for i in range(len(x_values)):
             
             y_start = y_values[i]
             y_end = y_start + slope
             for j in range(int(min(y_start,y_end)), int(max(y_start,y_end))+ 1):
                 if discretized_map[int(x_values[i]), int(np.floor(j))] == 0:
-                    #print("Failure by floor values")
                     return True
                 if discretized_map[int(x_values[i]), int(np.ceil(j))] == 0:
-                    #print("Failure by ceiling values")
                     return True
-        #print("No collision!")
         return False
     except ZeroDivisionError:
         y_values = range(min(a.position[0], b.position[0]), max(a.position[0], b.position[0]))
         x_values = [a.position[1] for _ in range(len(y_values))]
         for i in range(len(x_values)):
             if discretized_map[int(x_values[i]), int(y_values[i])] == 0:
-                #print("failure by divbyzero values")
                 return True
-        #print("No collision!")
         return False
 
 
@@ -79,49 +72,52 @@ def euc_dist(a, b):
     b = np.array(b)
     return np.linalg.norm(a - b)
 
-def RRT(iterations, discretized_map, start, goal):
-    root = Node(None, [], 0, start) 
+def RRT(threshold, iterations, discretized_map, start, goal):
+    start = (start[1], start[0])
+    goal = (goal[1], goal[0])
+    root = Node(None, [], 0, start)
+    goal_node = Node(None, [], 0, goal)
 
     map_size = discretized_map.shape
     # See how the other sub-team handles this to make this generalizable
 
-    for i in range(iterations):
-        #print(i + 1)
+    for iteration in range(1, iterations + 1):
         points = []
         tree_traversal(root, points)
         randomPosition = (np.random.randint(map_size[0]), np.random.randint(map_size[1]))
         new_node = Node(None, [], np.inf, randomPosition)
         if discretized_map[randomPosition] == 0:
-            #print("In an Obstacle")
             continue
         nearest_node = nearest(new_node, points)
         new_node.cost = euc_dist(new_node.position, nearest_node.position)
         # Get a good value for radius, maybe dynamically calculated? Right now it's 16 arbitrarily.
-        node_neighbors = find_neighbors(points, new_node, 100)
+        node_neighbors = find_neighbors(points, new_node, threshold)
         node_best = None
         for node in node_neighbors:
             if not collides(node, new_node, discretized_map):
-                #print("Node Best Found")
                 node_best = node
                 break
         if node_best == None:
-            #print("Failure by no neighbors")
             continue
         new_node.parent = node_best
         node_best.children.append(new_node)
         new_node.cost = euc_dist(new_node.position, node_best.position) + node_best.cost
         #print(node_best, new_node, node_best.cost, new_node.cost, node_best.position, new_node.position)
         # Rewire the graph as appropriate for the neighbors of this new node
-        #  for neighbor in node_neighbors:
-        #      if collides(neighbor, new_node, discretized_map):
-        #          continue
-        #      if new_node.cost + euc_dist(new_node.position, neighbor.position) < neighbor.cost:
-        #          neighbor.cost = new_node.cost + euc_dist(new_node.position, neighbor.position)
-        #          neighbor.parent.children.remove(neighbor)
-        #          neighbor.parent = new_node
-        #          new_node.children.append(neighbor)
+        for neighbor in node_neighbors:
+            if collides(neighbor, new_node, discretized_map):
+                continue
+            if new_node.cost + euc_dist(new_node.position, neighbor.position) < neighbor.cost:
+                neighbor.cost = new_node.cost + euc_dist(new_node.position, neighbor.position)
+                neighbor.parent.children.remove(neighbor)
+                neighbor.parent = new_node
+                new_node.children.append(neighbor)
                 # Pseudocode says G += {new_node, neighbor}. What does this mean in our context? Is it necessary?
         # Similarly it says G += Link here. It's assuming the graph is defined in terms of edges and vertices
+        if euc_dist(new_node.position, goal_node.position) <= threshold and not collides(new_node, goal_node, discretized_map):
+            stored_node = new_node
+            print(new_node.position, goal_node.position, collides(new_node, goal_node, discretized_map))
+            break
     
     points = []
     tree_traversal(root, points)
@@ -131,7 +127,7 @@ def RRT(iterations, discretized_map, start, goal):
 
     best_node = nearest(goal_node, points)
 
-    path = [best_node.position,goal]
+    path = [best_node.position, stored_node.position, goal]
 
     current_node = best_node
 
@@ -141,5 +137,6 @@ def RRT(iterations, discretized_map, start, goal):
 
     path.insert(0, start)
 
+    print(f"{iteration} Iterations")
     return path
                 
