@@ -9,6 +9,9 @@ class Node:
         self.cost = cost
         self.position = position
 
+    def __lt__(self, other):
+        return self.cost < other.cost
+
 def nearest(this, points):
     # Find the nearest node in the graph
     nearest_node = (None, np.inf)
@@ -79,17 +82,21 @@ def RRT(threshold, iterations, discretized_map, start, goal):
     goal_node = Node(None, [], 0, goal)
 
     map_size = discretized_map.shape
+    stored_node = None
     # See how the other sub-team handles this to make this generalizable
     old_dist_to_goal = np.inf
-    for iteration in range(1, iterations + 1):
+    iterations_ran = 0
+    while iterations > 0 or stored_node == None:
+        iterations_ran += 1
+        iterations -= 1
         points = []
         tree_traversal(root, points)
         randomPosition = (np.random.randint(map_size[0]), np.random.randint(map_size[1]))
         new_node = Node(None, [], np.inf, randomPosition)
         if discretized_map[randomPosition] == 0:
             continue
-        nearest_node = nearest(new_node, points)
-        new_node.cost = euc_dist(new_node.position, nearest_node.position)
+        #nearest_node = nearest(new_node, points)
+        #new_node.cost = euc_dist(new_node.position, nearest_node.position)
         # Get a good value for radius, maybe dynamically calculated? Right now it's 16 arbitrarily.
         node_neighbors = find_neighbors(points, new_node, threshold)
         node_best = None
@@ -118,7 +125,7 @@ def RRT(threshold, iterations, discretized_map, start, goal):
         
         if  dist_to_goal <= threshold and dist_to_goal < old_dist_to_goal and not collides(new_node, goal_node, discretized_map):
             stored_node = new_node
-            print(new_node.position, goal_node.position, collides(new_node, goal_node, discretized_map))
+            #print(new_node.position, goal_node.position, collides(new_node, goal_node, discretized_map))
             old_dist_to_goal = dist_to_goal
     
     points = []
@@ -139,6 +146,6 @@ def RRT(threshold, iterations, discretized_map, start, goal):
 
     path.insert(0, start)
 
-    print(f"{iteration} Iterations")
-    return path, root
+    print(f"{iterations_ran} Iterations")
+    return path, root, stored_node.cost + old_dist_to_goal
                 

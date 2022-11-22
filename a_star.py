@@ -55,8 +55,10 @@ def a_star(grid, start, end):
 #calling this returns a list of points describing the path
 def run_a_star(grid, start, end):
     path = []
+    
     trace = a_star(grid, start, end)
+    cost = trace.cost
     while trace.position != start:
         path.append(trace.position)
         trace = trace.parent
-    return path[::-1]
+    return path[::-1], cost
